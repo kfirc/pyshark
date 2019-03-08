@@ -1,10 +1,6 @@
 import pyshark
 from datetime import datetime
 
-DIRECTORY = 'C:\\Users\\Kfir\\Desktop\\git\\assigments\\TD\\'
-CAP_URL = DIRECTORY + "GENERAL_HackChallenge_Cmas2011_CounterHack.pcap"
-TEST_PATH = DIRECTORY + "test.html"
-
 HTTP_DATE_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
 FILE_DATE_FORMAT = '%Y-%m-%d %H:%M'
 HTML_FILE_FORMAT = """client_ip - {client_ip}
@@ -16,7 +12,6 @@ date - {date}
 
 {html}
 """
-
 
 class HTTP_Stream(object):
     def __init__(self, client_ip, client_port, host, pkt_number, user_agent=None, html=None, date=None):
@@ -74,9 +69,8 @@ def parse_html(cap):
 
 
 def main():
-    cap = pyshark.FileCapture(CAP_URL)
-    parse_html(cap)
-
+    pass
+    
 
 if __name__ == '__main__':
 	main()

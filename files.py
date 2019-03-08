@@ -1,9 +1,5 @@
 import base64
 
-DIRECTORY = 'C:\\Users\\Kfir\\Desktop\\git\\assigments\\TD\\'
-ATTACHMENT_URL = DIRECTORY + "attachment.txt"
-DECODED_ATTACHMENT_URL = DIRECTORY + "decoded_attachment.doc"
-
 
 def decode_base64_file(path, to_path=None):
     with open(path, 'rb') as file_from:
@@ -16,7 +12,7 @@ def decode_base64_file(path, to_path=None):
 
 
 def main():
-	decode_base64_file(ATTACHMENT_URL, DECODED_ATTACHMENT_URL)
+	pass
 
 
 if __name__ == '__main__':

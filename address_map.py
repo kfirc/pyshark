@@ -1,8 +1,6 @@
 import pyshark
 from datetime import datetime
 
-DIRECTORY = 'C:\\Users\\Kfir\\Desktop\\git\\assigments\\TD\\'
-CAP_URL = DIRECTORY + "GENERAL_HackChallenge_Cmas2011_CounterHack.pcap"
 
 UNKNOWN_MAC = '00:00:00:00:00:00'
 
@@ -71,15 +69,14 @@ class Address_Map(object):
                 print("{mac}: {ips}".format(mac=mac,ips=ips))
 
 
-def address_map(cap):
+def pretty_print(cap):
     cap_map = Address_Map(cap)
     cap_map.pretty_print()
             
 
 def main():
-    cap = pyshark.FileCapture(CAP_URL)
-    address_map(cap)
-    
+    pass
+
 
 if __name__ == '__main__':
     main()
