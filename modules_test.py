@@ -1,3 +1,4 @@
+import servers
 import files
 import address_map
 import http_stream
@@ -13,9 +14,10 @@ DECODED_ATTACHMENT_URL = DIRECTORY + "decoded_attachment.doc"
 
 def test():
     cap = pyshark.FileCapture(CAP_URL)
-    #address_map.pretty_print(cap)
+    address_map.pretty_print(cap)
+    servers.pretty_print(cap)
     #http_stream.parse_html(cap, "C:\\Users\\Kfir\\Desktop\\test\\")
-    files.decode_base64(ATTACHMENT_URL, DECODED_ATTACHMENT_URL)    
+    #files.decode_base64(ATTACHMENT_URL, DECODED_ATTACHMENT_URL)    
 
 
 def main():

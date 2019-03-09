@@ -63,10 +63,11 @@ class Address_Map(object):
 
 
     def pretty_print(self):
-        for mac in self.address_map.keys():
-            if self.address_map[mac]:
-                ips = ", ".join(self.address_map[mac])
-                print("{mac}: {ips}".format(mac=mac,ips=ips))
+        string = "MAC to IP address map from cap:\n"
+        for mac, ips in self.address_map.items():
+            if ips:
+                string += "{mac}: {ips}\n".format(mac=mac,ips=", ".join(ips))
+        print(string)
 
 
 def pretty_print(cap):
