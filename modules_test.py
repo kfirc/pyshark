@@ -5,32 +5,33 @@ import http_stream
 import pyshark
 
 
-DIRECTORY = 'C:\\Users\\Kfir\\Desktop\\git\\assigments\\TD\\'
+DIRECTORY = "C:\\Users\\Lilya\\Desktop\\kfir\\test\\" #'C:\\Users\\Kfir\\Desktop\\git\\assigments\\TD\\'
 CAP_URL = DIRECTORY + "GENERAL_HackChallenge_Cmas2011_CounterHack.pcap"
 TEST_PATH = DIRECTORY + "test.html"
 ATTACHMENT_URL = DIRECTORY + "attachment.txt"
 DECODED_ATTACHMENT_URL = DIRECTORY + "decoded_attachment.doc"
 
 def packet_captured(packet):
-    print('Just arrived:', packet)
+    print('Just arrived:', packet.highest_layer)
 
 
-def live_capture(interface=None, capture_filter=None):
-    capture = pyshark.LiveCapture(interface=interface, capture_filter=capture_filter)
-    capture.apply_on_packets(packet_captured)
+def live_capture(interface=None, capture_filter=None, packet_count=None):
+    cap = pyshark.LiveCapture(interface=interface, capture_filter=capture_filter)
+    cap.sniff(packet_count=packet_count)
+    return cap
 
 
-def file_capture(cap_url):
-    cap = pyshark.FileCapture(cap_url)
+def diagnose_network(cap, directory=DIRECTORY):
     address_map.pretty_print(cap)
     servers.pretty_print(cap)
-    http_stream.parse_html(cap, "C:\\Users\\Kfir\\Desktop\\test\\")
+    http_stream.parse_html(cap, directory)
     #files.decode_base64(ATTACHMENT_URL, DECODED_ATTACHMENT_URL)    
 
 
 def main():
-    live_capture()
-    #file_capture(CAP_URL)
+    filecap = pyshark.FileCapture(CAP_URL)
+    livecap = live_capture(packet_count=10)
+    diagnose_network(livecap)
 
 
 if __name__ == '__main__':

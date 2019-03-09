@@ -18,11 +18,11 @@ Form - {form}<br><br>
 
 class HTTP_Stream(object):
     def __init__(self, packet, pkt_number=None):
-        self.host = packet.http.host
         self.client_ip = packet.ip.src
         self.server_ip = packet.ip.dst
         self.client_port = packet.tcp.srcport
-        self.user_agent = packet.http.user_agent
+        self.host = packet.http.host if hasattr(packet.http, "host") else None
+        self.user_agent = packet.http.user_agent if hasattr(packet.http, "user_agent") else None
 
         if packet.highest_layer == 'URLENCODED-FORM':
             form_layer = getattr(packet, 'urlencoded-form')
@@ -36,6 +36,14 @@ class HTTP_Stream(object):
         self.html = None   
 
 
+    def append(self, packet, pkt_number):
+        if packet.highest_layer == 'DATA-TEXT-LINES':
+            date = datetime.strptime(packet.http.date, HTTP_DATE_FORMAT)
+            self.date = date.strftime(FILE_DATE_FORMAT)
+            self.html = extract(packet)
+            self.pkt_numbers.append(pkt_number)
+
+ 
     def export(self, directory):
         attributes = {"client_ip": self.client_ip, "server_ip": self.server_ip, "client_port": self.client_port, "host": self.host, "html": self.html,\
                       "pkt_numbers": ",".join(self.pkt_numbers), "user_agent": self.user_agent, "date": self.date, "form": self.form}
@@ -65,26 +73,16 @@ def extract(packet):
 def parse_html(cap, directory):
     
     http_streams = []
-
+    
     for i, packet in enumerate(cap):
         if 'http' in dir(packet):
             if hasattr(packet.http, 'request_method') and packet.http.request_method in ['POST', 'GET']:
-                pkt_number = str(i+1)
-                stream = HTTP_Stream(packet, pkt_number)
-                http_streams.append(stream)
+                http_streams += [HTTP_Stream(packet, str(i+1))]
 
         if packet.highest_layer == 'DATA-TEXT-LINES':
-            client_port = packet.tcp.dstport
-            date = datetime.strptime(packet.http.date, HTTP_DATE_FORMAT)
-            date = date.strftime(FILE_DATE_FORMAT)
-            html = extract(packet)
-            
             for stream in http_streams:
-                if stream.client_port == client_port and stream.html is None:
-                    stream.html = html
-                    stream.date = date
-                    stream.pkt_numbers.append(str(i+1))
-
+                if stream.client_port == packet.tcp.dstport and stream.html is None:
+                    stream.append(packet, str(i+1))
                     stream.export(directory)
                     stream.pretty_print()
 
