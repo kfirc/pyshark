@@ -1,7 +1,13 @@
 import base64
+import os
 
 
-def decode_base64_file(path, to_path=None):
+def safe_makedirs(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
+def decode_base64(path, to_path=None):
     with open(path, 'rb') as file_from:
         text = file_from.read()
 
@@ -12,8 +18,8 @@ def decode_base64_file(path, to_path=None):
 
 
 def main():
-	pass
+    pass
 
 
 if __name__ == '__main__':
-	main()
+    main()

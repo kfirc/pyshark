@@ -11,12 +11,11 @@ ATTACHMENT_URL = DIRECTORY + "attachment.txt"
 DECODED_ATTACHMENT_URL = DIRECTORY + "decoded_attachment.doc"
 
 
-
 def test():
     cap = pyshark.FileCapture(CAP_URL)
-    address_map.pretty_print(cap)
-    #http_stream.parse_html(cap)
-    files.decode_base64_file(ATTACHMENT_URL, DECODED_ATTACHMENT_URL)    
+    #address_map.pretty_print(cap)
+    #http_stream.parse_html(cap, "C:\\Users\\Kfir\\Desktop\\test\\")
+    files.decode_base64(ATTACHMENT_URL, DECODED_ATTACHMENT_URL)    
 
 
 def main():
