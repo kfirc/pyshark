@@ -41,8 +41,8 @@ class HTTP_Stream(object):
                       "pkt_numbers": ",".join(self.pkt_numbers), "user_agent": self.user_agent, "date": self.date, "form": self.form}
 
         text = HTML_FILE_FORMAT.format(**attributes)
-        host = self.host.replace('.', '(d)')
-        ip = self.client_ip.replace('.', '-')
+        host = self.host
+        ip = self.client_ip
 
         files.safe_makedirs(directory + ip)
         directory += ip + "\\"
@@ -50,6 +50,10 @@ class HTTP_Stream(object):
 
         with open(path, 'w') as f:
             f.write(text)
+
+
+    def pretty_print(self):
+        print("{ip} ({date}) - {host}".format(ip=self.client_ip, date=self.date, host=self.host))
 
 
 def extract(packet):
@@ -81,9 +85,8 @@ def parse_html(cap, directory):
                     stream.date = date
                     stream.pkt_numbers.append(str(i+1))
 
-    for stream in http_streams:
-        if stream.html:
-            stream.export(directory)
+                    stream.export(directory)
+                    stream.pretty_print()
 
 
 def main():
