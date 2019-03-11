@@ -5,11 +5,12 @@ import http_stream
 import pyshark
 
 
-DIRECTORY = "C:\\Users\\Lilya\\Desktop\\kfir\\test\\" #'C:\\Users\\Kfir\\Desktop\\git\\assigments\\TD\\'
+DIRECTORY = 'C:\\Users\\Kfir\\Desktop\\git\\assigments\\TD\\' #"C:\\Users\\Lilya\\Desktop\\kfir\\test\\"
 CAP_URL = DIRECTORY + "GENERAL_HackChallenge_Cmas2011_CounterHack.pcap"
 TEST_PATH = DIRECTORY + "test.html"
 ATTACHMENT_URL = DIRECTORY + "attachment.txt"
 DECODED_ATTACHMENT_URL = DIRECTORY + "decoded_attachment.doc"
+
 
 def packet_captured(packet):
     print('Just arrived:', packet.highest_layer)
@@ -30,8 +31,8 @@ def diagnose_network(cap, directory=DIRECTORY):
 
 def main():
     filecap = pyshark.FileCapture(CAP_URL)
-    livecap = live_capture(packet_count=10)
-    diagnose_network(livecap)
+    #livecap = live_capture(packet_count=10)
+    diagnose_network(filecap)
 
 
 if __name__ == '__main__':

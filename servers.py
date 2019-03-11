@@ -17,16 +17,16 @@ SERVER_PORTS = {'21': 'FTP Server',\
 class Servers(object):
     def __init__(self, cap=None):
         self._dict = {}
-        if cap: self.find(cap)
+        if cap is not None: self.find(cap)
 
 
     def if_add_server(self, ip, port):
-        server_name = self.name(ip, port)
+        server_name = self.name(port)
         if server_name:
             self.add(ip, server_name)
 
 
-    def name(self, ip, port):
+    def name(self, port):
         if port in SERVER_PORTS.keys():
             return SERVER_PORTS[port]
         elif 0 < int(port) < 1024:
