@@ -1,22 +1,55 @@
-import pyshark
-from datetime import datetime
-
-
 UNKNOWN_MAC = '00:00:00:00:00:00'
 
 
-class Address_Map(object):
-    def __init__(self, cap):
+def coroutine(func):
+    def start(*args,**kwargs):
+        cr = func(*args,**kwargs)
+        next(cr)
+        return cr
+    return start
+
+
+class IPtoMAC(object):
+    def __init__(self, cap=None):
         self.address_map = {UNKNOWN_MAC: []}
-        self.create_map(cap)
+
+        if cap is not None:
+            for packet in cap:
+                self.map_packet(packet)
+        else:
+            self.map = self._map()
 
 
-    def create_map(self, cap):
-        for packet in cap:
-            if packet.highest_layer == 'ARP':
-                self._map_arp(packet)
-            elif 'ip' in dir(packet) and "eth" in dir(packet):
-                self._map_ip(packet)
+    def __next__(self):
+        if hasattr(self, 'map'):
+            next(self.map)
+
+
+    def send(self, packet):
+        if hasattr(self, 'map'):
+            self.map.send(packet)
+
+
+    def close(self):
+        if hasattr(self, 'map'):
+            self.map.close()
+
+
+    def map_packet(self, packet):
+        if packet.highest_layer == 'ARP':
+            self._map_arp(packet)
+        elif 'ip' in dir(packet) and "eth" in dir(packet):
+            self._map_ip(packet)
+
+
+    @coroutine
+    def _map(self):
+        try:
+            while True:
+                packet = (yield)
+                self.map_packet(packet)
+        except GeneratorExit:
+            self.pretty_print()
 
 
     def _map_arp(self, packet):
@@ -68,11 +101,6 @@ class Address_Map(object):
             if ips:
                 string += "{mac}: {ips}\n".format(mac=mac,ips=", ".join(ips))
         print(string)
-
-
-def pretty_print(cap):
-    cap_map = Address_Map(cap)
-    cap_map.pretty_print()
             
 
 def main():

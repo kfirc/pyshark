@@ -22,17 +22,24 @@ def live_capture(interface=None, capture_filter=None, packet_count=None):
     return cap
 
 
-def diagnose_network(cap, directory=DIRECTORY):
-    address_map.pretty_print(cap)
-    servers.pretty_print(cap)
-    http_stream.parse_html(cap, directory)
+def analyze_cap(cap, directory=DIRECTORY):
+    map_address = address_map.IPtoMAC()
+    cap_servers = servers.CaptureServers()
+    parse_html = http_stream.Parser(directory)
+    for i, packet in enumerate(cap):
+        map_address.send(packet)
+        cap_servers.send(packet)
+        parse_html.send((packet, i))
+    map_address.close()
+    cap_servers.close()
+    parse_html.close()
     #files.decode_base64(ATTACHMENT_URL, DECODED_ATTACHMENT_URL)    
 
 
 def main():
-    filecap = pyshark.FileCapture(CAP_URL)
+    file_cap = pyshark.FileCapture(CAP_URL)
     #livecap = live_capture(packet_count=10)
-    diagnose_network(filecap)
+    analyze_cap(file_cap)
 
 
 if __name__ == '__main__':

@@ -16,6 +16,15 @@ Form - {form}<br><br>
 {html}
 """
 
+
+def coroutine(func):
+    def start(*args,**kwargs):
+        cr = func(*args,**kwargs)
+        next(cr)
+        return cr
+    return start
+
+
 class HTTP_Stream(object):
     def __init__(self, packet, pkt_number=None):
         self.client_ip = packet.ip.src
@@ -40,7 +49,7 @@ class HTTP_Stream(object):
         if packet.highest_layer == 'DATA-TEXT-LINES':
             date = datetime.strptime(packet.http.date, HTTP_DATE_FORMAT)
             self.date = date.strftime(FILE_DATE_FORMAT)
-            self.html = extract(packet)
+            self.html = extract_html(packet)
             self.pkt_numbers.append(pkt_number)
 
  
@@ -64,13 +73,63 @@ class HTTP_Stream(object):
         print("{ip} ({date}) - {host}".format(ip=self.client_ip, date=self.date, host=self.host))
 
 
-def extract(packet):
+class Parser(object):
+    def __init__(self, directory, cap=None):
+        self.http_streams = []
+        self.directory = directory
+
+        if cap is not None:
+            for i, packet in enumerate(cap):
+                if 'http' in dir(packet):
+                    self.parse_packet(packet, i)
+        else:
+            self.capture = self._capture()
+
+    def __next__(self):
+        if hasattr(self, 'capture'):
+            next(self.capture)
+
+
+    def send(self, packet):
+        if hasattr(self, 'capture'):
+            self.capture.send(packet)
+
+
+    def close(self):
+        if hasattr(self, 'capture'):
+            self.capture.close()
+
+
+    def parse_packet(self, packet, i):
+        if hasattr(packet.http, 'request_method') and packet.http.request_method in ['POST', 'GET']:
+            self.http_streams += [HTTP_Stream(packet, str(i+1))]
+
+        if packet.highest_layer == 'DATA-TEXT-LINES':
+            for stream in self.http_streams:
+                if stream.client_port == packet.tcp.dstport and stream.html is None:
+                    stream.append(packet, str(i+1))
+                    stream.export(self.directory)
+                    stream.pretty_print()
+
+
+    @coroutine
+    def _capture(self):
+        try:
+            while True:
+                packet, i = (yield)
+                if 'http' in dir(packet):
+                    self.parse_packet(packet, i)
+        except GeneratorExit:
+            pass
+
+
+def extract_html(packet):
     data_layer = getattr(packet, "data-text-lines")
     html = ''.join(data_layer._get_all_field_lines())
     return html.replace('\\n', '').replace('\\r', '')
 
 
-def parse_html(cap, directory):
+def parse(directory, cap=None):
     
     http_streams = []
     
