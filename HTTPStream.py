@@ -1,6 +1,7 @@
-import files
-import pyshark
+import Files
 from datetime import datetime
+from PacketCapture import PacketCapture
+
 
 
 HTTP_DATE_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
@@ -17,15 +18,7 @@ Form - {form}<br><br>
 """
 
 
-def coroutine(func):
-    def start(*args,**kwargs):
-        cr = func(*args,**kwargs)
-        next(cr)
-        return cr
-    return start
-
-
-class HTTP_Stream(object):
+class HTTPStream(object):
     def __init__(self, packet, pkt_number=None):
         self.client_ip = packet.ip.src
         self.server_ip = packet.ip.dst
@@ -61,7 +54,7 @@ class HTTP_Stream(object):
         host = self.host
         ip = self.client_ip
 
-        files.safe_makedirs(directory + ip)
+        Files.safe_makedirs(directory + ip)
         directory += ip + "\\"
         path = directory + "{host} {date}.html".format(host=host, date=self.date)
 
@@ -73,77 +66,35 @@ class HTTP_Stream(object):
         print("{ip} ({date}) - {host}".format(ip=self.client_ip, date=self.date, host=self.host))
 
 
-class Parser(object):
+class Parser(PacketCapture):
     def __init__(self, directory, cap=None):
+        super().__init__(cap)
         self.http_streams = []
         self.directory = directory
 
-        if cap is not None:
-            for i, packet in enumerate(cap):
-                if 'http' in dir(packet):
-                    self.parse_packet(packet, i)
-        else:
-            self.capture = self._capture()
 
-    def __next__(self):
-        if hasattr(self, 'capture'):
-            next(self.capture)
+    def __exit__(self):
+        pass
 
 
-    def send(self, packet):
-        if hasattr(self, 'capture'):
-            self.capture.send(packet)
+    def parse(self, packet):
+        packet, i = packet
+        if 'http' in dir(packet):
+            if hasattr(packet.http, 'request_method') and packet.http.request_method in ['POST', 'GET']:
+                self.http_streams += [HTTPStream(packet, str(i+1))]
 
-
-    def close(self):
-        if hasattr(self, 'capture'):
-            self.capture.close()
-
-
-    def parse_packet(self, packet, i):
-        if hasattr(packet.http, 'request_method') and packet.http.request_method in ['POST', 'GET']:
-            self.http_streams += [HTTP_Stream(packet, str(i+1))]
-
-        if packet.highest_layer == 'DATA-TEXT-LINES':
-            for stream in self.http_streams:
-                if stream.client_port == packet.tcp.dstport and stream.html is None:
-                    stream.append(packet, str(i+1))
-                    stream.export(self.directory)
-                    stream.pretty_print()
-
-
-    @coroutine
-    def _capture(self):
-        try:
-            while True:
-                packet, i = (yield)
-                if 'http' in dir(packet):
-                    self.parse_packet(packet, i)
-        except GeneratorExit:
-            pass
+            if packet.highest_layer == 'DATA-TEXT-LINES':
+                for stream in self.http_streams:
+                    if stream.client_port == packet.tcp.dstport and stream.html is None:
+                        stream.append(packet, str(i+1))
+                        stream.export(self.directory)
+                        stream.pretty_print()
 
 
 def extract_html(packet):
     data_layer = getattr(packet, "data-text-lines")
     html = ''.join(data_layer._get_all_field_lines())
     return html.replace('\\n', '').replace('\\r', '')
-
-
-def parse(directory, cap=None):
-    
-    http_streams = []
-    
-    for i, packet in enumerate(cap):
-        if 'http' in dir(packet):
-            if hasattr(packet.http, 'request_method') and packet.http.request_method in ['POST', 'GET']:
-                http_streams += [HTTP_Stream(packet, str(i+1))]
-
-        if packet.highest_layer == 'DATA-TEXT-LINES':
-            for stream in http_streams:
-                if stream.client_port == packet.tcp.dstport and stream.html is None:
-                    stream.append(packet, str(i+1))
-                    stream.export(directory)
-                    stream.pretty_print()
 
 
 def main():

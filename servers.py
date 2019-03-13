@@ -1,3 +1,6 @@
+from PacketCapture import PacketCapture
+
+__author__ = 'Kfir'
 SERVER_PORTS = {'21': 'FTP Server',\
                 '23': 'Telnet Server',\
                 '25': 'SMTP Server',\
@@ -12,50 +15,17 @@ SERVER_PORTS = {'21': 'FTP Server',\
                 }
 
 
-def coroutine(func):
-    def start(*args,**kwargs):
-        cr = func(*args,**kwargs)
-        next(cr)
-        return cr
-    return start
-
-
-class CaptureServers(object):
+class CaptureServers(PacketCapture):
     def __init__(self, cap=None, defined_only=False):
+        super().__init__(cap)
         self._dict = {}
         self.defined_only = defined_only
 
-        if cap is not None:
-            for packet in cap:
-                self.find(packet)
-            self.pretty_print(defined_only)
-        else:
-            self.capture = self._capture()
+        if cap: self.pretty_print()
 
 
-    def __next__(self):
-        if hasattr(self, 'capture'):
-            next(self.capture)
-
-
-    @coroutine
-    def _capture(self):
-        try:
-            while True:
-                packet = (yield)
-                self.find(packet)
-        except GeneratorExit:
-            self.pretty_print()
-
-
-    def send(self, packet):
-        if hasattr(self, 'capture'):
-            self.capture.send(packet)
-
-
-    def close(self):
-        if hasattr(self, 'capture'):
-            self.capture.close()
+    def __exit__(self):
+        self.pretty_print()
 
 
     def if_add_server(self, ip, port):
@@ -79,7 +49,7 @@ class CaptureServers(object):
         self._dict[ip] = list(set(self._dict[ip]).union([server_name]))
 
 
-    def find(self, packet):
+    def parse(self, packet):
         if 'ip' in dir(packet):
             if 'tcp' in dir(packet):
                 self.if_add_server(packet.ip.src, packet.tcp.srcport)

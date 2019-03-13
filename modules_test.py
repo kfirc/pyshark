@@ -1,7 +1,8 @@
-import servers
-import files
-import address_map
-import http_stream
+import Servers
+import Files
+import AddressMap
+import HTTPStream
+from Hops import Hops
 import pyshark
 
 
@@ -23,22 +24,25 @@ def live_capture(interface=None, capture_filter=None, packet_count=None):
 
 
 def analyze_cap(cap, directory=DIRECTORY):
-    map_address = address_map.IPtoMAC()
-    cap_servers = servers.CaptureServers()
-    parse_html = http_stream.Parser(directory)
+    map_address = AddressMap.IPtoMAC()
+    cap_servers = Servers.CaptureServers()
+    parse_html = HTTPStream.Parser(directory)
+    hops = Hops()
     for i, packet in enumerate(cap):
         map_address.send(packet)
         cap_servers.send(packet)
         parse_html.send((packet, i))
+        hops.send(packet)
     map_address.close()
     cap_servers.close()
     parse_html.close()
-    #files.decode_base64(ATTACHMENT_URL, DECODED_ATTACHMENT_URL)    
+    hops.close()
+    #Files.decode_base64(ATTACHMENT_URL, DECODED_ATTACHMENT_URL)    
 
 
 def main():
     file_cap = pyshark.FileCapture(CAP_URL)
-    #livecap = live_capture(packet_count=10)
+    #live_cap = live_capture(packet_count=100)
     analyze_cap(file_cap)
 
 
