@@ -10,7 +10,6 @@ HTML_FILE_FORMAT = """Client IP - {client_ip}<br>
 Server IP - {server_ip}<br>
 Client Port - {client_port}<br>
 Host - {host}<br>
-Packet Numbers - {pkt_numbers}<br>
 User Agent - {user_agent}<br>
 Date - {date}<br>
 Form - {form}<br><br>
@@ -19,7 +18,7 @@ Form - {form}<br><br>
 
 
 class HTTPStream(object):
-    def __init__(self, packet, pkt_number=None):
+    def __init__(self, packet):
         self.client_ip = packet.ip.src
         self.server_ip = packet.ip.dst
         self.client_port = packet.tcp.srcport
@@ -33,22 +32,20 @@ class HTTPStream(object):
         else:
             self.form = None
 
-        self.pkt_numbers = [pkt_number]
         self.date = None
         self.html = None   
 
 
-    def append(self, packet, pkt_number):
+    def append(self, packet):
         if packet.highest_layer == 'DATA-TEXT-LINES':
             date = datetime.strptime(packet.http.date, HTTP_DATE_FORMAT)
             self.date = date.strftime(FILE_DATE_FORMAT)
             self.html = extract_html(packet)
-            self.pkt_numbers.append(pkt_number)
 
  
     def export(self, directory):
         attributes = {"client_ip": self.client_ip, "server_ip": self.server_ip, "client_port": self.client_port, "host": self.host, "html": self.html,\
-                      "pkt_numbers": ",".join(self.pkt_numbers), "user_agent": self.user_agent, "date": self.date, "form": self.form}
+                      "user_agent": self.user_agent, "date": self.date, "form": self.form}
 
         text = HTML_FILE_FORMAT.format(**attributes)
         host = self.host
@@ -78,15 +75,14 @@ class Parser(PacketCapture):
 
 
     def parse(self, packet):
-        packet, i = packet
         if 'http' in dir(packet):
             if hasattr(packet.http, 'request_method') and packet.http.request_method in ['POST', 'GET']:
-                self.http_streams += [HTTPStream(packet, str(i+1))]
+                self.http_streams += [HTTPStream(packet)]
 
             if packet.highest_layer == 'DATA-TEXT-LINES':
                 for stream in self.http_streams:
                     if stream.client_port == packet.tcp.dstport and stream.html is None:
-                        stream.append(packet, str(i+1))
+                        stream.append(packet)
                         stream.export(self.directory)
                         stream.pretty_print()
 

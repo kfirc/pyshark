@@ -27,6 +27,7 @@ class Hops(PacketCapture):
         print("Hops per IP:")
         for ip, hops in self._list:
             print("{ip} - {hops} hops away".format(ip=ip, hops=hops))
+        print()
 
 
 def main():
